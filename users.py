@@ -82,6 +82,7 @@ async def user_update(user: User):
         return {"error": "User not updated"} 
     return user
 
+
 # Elimina un usuario
 @app.delete("/users/{id}")
 async def user_delete(id: int):
@@ -93,3 +94,5 @@ async def user_delete(id: int):
             return {"message": "User deleted"}
     if not found:
         return {"error": "User not found"}
+
+#Para iniciar: uvicorn users:app --reload

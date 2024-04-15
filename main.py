@@ -9,3 +9,5 @@ async def root():
 @app.get("/sexito")
 async def root2():
     return {"NO ME LO CREO": "INCREIBLE CHAVALES"}
+
+#Para iniciar: uvicorn users:app --reload
