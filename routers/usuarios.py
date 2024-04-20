@@ -1,9 +1,9 @@
-from fastapi import FastAPI
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 
 # Crea la app
-app= FastAPI()
+app= APIRouter(prefix="/users",tags=["users"], responses={404: {"description": "Not found"}})
 
 
 # Entidad user
@@ -22,31 +22,31 @@ users_list = [User(id= 1, name = "Brais", surname = "Moure", url = "https://www.
 
 
 #Llama a todos los users
-@app.get("/users")
+@app.get("/")
 async def users():
     return users_list
 
 
 #Llama a los users por su id por Path
-@app.get("/users/{id}")
+@app.get("/{id}")
 async def usersId(id: int):
     users = filter(lambda user: user.id == id, users_list)
     try:
         return list(users)[0]
     except IndexError: 
-        return {"error": "User not found"}
+        raise HTTPException(status_code=404, detail="User not found")
 
 
 # Para probar: http://127.0.0.1:8000/users/2
 
 
 # Llama a los usuarios por su id por Query (No hace falta volverlo funcion, solo fue una prueba para ver si funcionaba)
-@app.get("/usersquery/")
+@app.get("/query/")
 async def usersID(id: int):
     return search_user_by_id(id)
 
 
-# Para probar: http://127.0.0.1:8000/usersquery/?id=2
+# Para probar: http://127.0.0.1:8000/users/query/?id=2
 
 
 # Funcion para buscar usuarios por id por Query
@@ -55,21 +55,20 @@ def search_user_by_id(id: int):
     try:
         return list(users)[0]
     except IndexError: 
-        return {"error": "User not found"}
-
+        return 
 
 # Crea un usuario
-@app.post("/users/")
+@app.post("/",response_model= User , status_code=201)
 async def users_create(user: User):
-    if type(search_user_by_id(user.id)) == User:
-        return {"error": "User already exists"}
+    existing_user = search_user_by_id(user.id)
+    if existing_user is not None:
+        raise HTTPException(status_code=409, detail="User already exists")
     else:
         users_list.append(user)
         return user
 
-
 # Actualiza un usuario
-@app.put("/users/{id}")
+@app.put("/{id}")
 async def user_update(user: User):
 
     found = False
@@ -79,12 +78,13 @@ async def user_update(user: User):
             users_list[index] = user
             found = True
     if not found:
-        return {"error": "User not updated"} 
-    return user
+        raise HTTPException(status_code=404, detail="User not found")
+    else:
+        return user
 
 
 # Elimina un usuario
-@app.delete("/users/{id}")
+@app.delete("/{id}")
 async def user_delete(id: int):
     found = False
     for index, saved_user in enumerate(users_list):
@@ -93,6 +93,5 @@ async def user_delete(id: int):
             found = True
             return {"message": "User deleted"}
     if not found:
-        return {"error": "User not found"}
-
+        raise HTTPException (status_code=404, detail="User not found")
 #Para iniciar: uvicorn users:app --reload
